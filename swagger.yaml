@@ -1,0 +1,227 @@
+openapi: 3.0.0
+info:
+  title: WhatsApp Noweb API
+  description: A robust, modular WhatsApp API using @whiskeysockets/baileys.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local server
+
+paths:
+  /sessions:
+    get:
+      summary: List all sessions
+      description: Retrieve a list of all active and saved sessions.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    status:
+                      type: string
+                    hasQR:
+                      type: boolean
+
+  /session/{id}:
+    post:
+      summary: Create or Resume Session
+      description: Initialize a new session or reconnect an existing one. Returns QR code if not connected.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session created or status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                  qr:
+                    type: string
+                    description: Base64 encoded QR image (if applicable)
+
+    get:
+      summary: Get Session Status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current session status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+
+    delete:
+      summary: Delete Session
+      description: Logout and remove session data.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session deleted
+
+  /session/{id}/qr:
+    get:
+      summary: Get QR Code Image
+      description: View the QR code directly as a PNG image.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /groups/{sessionId}:
+    get:
+      summary: List Groups
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /contacts/{sessionId}:
+    get:
+      summary: List Contacts
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of contacts
+
+  /send:
+    post:
+      summary: Send Message
+      description: Send text or media to a single recipient.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - to
+              properties:
+                sessionId:
+                  type: string
+                to:
+                  type: string
+                  description: Phone number or Group JID
+                message:
+                  type: string
+                mediaUrl:
+                  type: string
+                mediaType:
+                  type: string
+                  enum: [image, video, audio, document]
+                caption:
+                  type: string
+                fileName:
+                  type: string
+      responses:
+        '200':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  messageId:
+                    type: string
+
+  /send-bulk:
+    post:
+      summary: Send Bulk Messages
+      description: Send messages to multiple recipients with delay.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - receivers
+                - message
+              properties:
+                sessionId:
+                  type: string
+                receivers:
+                  type: array
+                  items:
+                    type: string
+                message:
+                  type: string
+                delayMs:
+                  type: integer
+                  default: 1000
+                mediaUrl:
+                  type: string
+                mediaType:
+                  type: string
+      responses:
+        '200':
+          description: Bulk processing completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  results:
+                    type: array
