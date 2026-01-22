@@ -55,8 +55,21 @@ export const getQRImage = async (req, res) => {
         return res.status(404).send('QR Code not available or session connected')
     }
 
-    res.setHeader('Content-Type', 'image/png')
-    await QRCode.toFileStream(res, session.qr)
+    try {
+        const qrDataURL = await QRCode.toDataURL(session.qr)
+        const jsonData = {
+            id: sessionId,
+            status: session.status,
+            qr: qrDataURL
+        }
+        res.send(`
+            <img src="${qrDataURL}" />
+            <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+        `)
+    } catch (error) {
+        logger.error('Error generating QR image:', error)
+        res.status(500).send('Error generating QR image')
+    }
 }
 
 export const deleteSession = async (req, res) => {

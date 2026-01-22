@@ -7,7 +7,7 @@ import logger from '../config/logger.js'
 
 import { triggerWebhook } from './webhook.service.js'
 
-export async function createConnection(sessionId, { onQR, onStatusChange }, retryCount = 0) {
+export async function createConnection(sessionId, { onQR, onStatusChange, onSocket }, retryCount = 0) {
     const { state, saveCreds } = await useMultiFileAuthState(`sessions/${sessionId}`)
     const { version, isLatest } = await fetchLatestBaileysVersion()
 
@@ -25,6 +25,8 @@ export async function createConnection(sessionId, { onQR, onStatusChange }, retr
         markOnlineOnConnect: false,
         shouldIgnoreJid: (jid) => jid?.includes('newsletter'), // Ignore newsletters to save RAM
     })
+
+    if (onSocket) onSocket(sock)
 
     sock.ev.on('creds.update', saveCreds)
 
@@ -66,7 +68,7 @@ export async function createConnection(sessionId, { onQR, onStatusChange }, retr
                 logger.info(`Session ${sessionId}: Reconnecting in ${delay}ms... (Attempt ${retryCount + 1})`)
 
                 setTimeout(() => {
-                    createConnection(sessionId, { onQR, onStatusChange }, retryCount + 1)
+                    createConnection(sessionId, { onQR, onStatusChange, onSocket }, retryCount + 1)
                 }, delay)
             } else if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 logger.error(`Session ${sessionId}: Logged out or unauthorized.`)

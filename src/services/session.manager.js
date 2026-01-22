@@ -35,7 +35,7 @@ export async function createSession(sessionId) {
 
     const setupSocket = async () => {
         try {
-            const sock = await createConnection(sessionId, {
+            await createConnection(sessionId, {
                 onQR: (qr) => {
                     session.qr = qr
                     session.status = 'qr'
@@ -45,9 +45,11 @@ export async function createSession(sessionId) {
                     if (status === 'connected') {
                         session.qr = null
                     }
+                },
+                onSocket: (sock) => {
+                    session.sock = sock
                 }
             })
-            session.sock = sock
         } catch (error) {
             logger.error(`Error setting up session ${sessionId}:`, error)
             session.status = 'error'
