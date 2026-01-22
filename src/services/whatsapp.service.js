@@ -18,6 +18,8 @@ export async function createConnection(sessionId, { onQR, onStatusChange }, retr
         auth: state,
         printQRInTerminal: false,
         logger: logger.child({ session: sessionId, level: 'silent' }),
+        // Customize what appears on the phone (Linked Devices)
+        browser: ['SendZap', 'Chrome', '1.0'],
         // Optimizations for high-density (low RAM)
         syncFullHistory: false,
         markOnlineOnConnect: false,
