@@ -1,11 +1,21 @@
 openapi: 3.0.0
 info:
   title: WhatsApp Noweb API
-  description: A robust, modular WhatsApp API using @whiskeysockets/baileys.
+  description: A robust, modular WhatsApp API using @whiskeysockets/baileys. Optimized for high-density microservice deployment.
   version: 1.0.0
 servers:
   - url: http://localhost:3000
-    description: Local server
+    description: Local/Dev server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+security:
+  - ApiKeyAuth: []
 
 paths:
   /sessions:
@@ -140,6 +150,64 @@ paths:
         '200':
           description: List of contacts
 
+  /check-number/{sessionId}/{number}:
+    get:
+      summary: Check if number exists on WhatsApp
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: number
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  number:
+                    type: string
+                  exists:
+                    type: boolean
+                  jid:
+                    type: string
+
+  /send-contact:
+    post:
+      summary: Send Contact VCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - to
+                - contactName
+                - contactNumber
+              properties:
+                sessionId:
+                  type: string
+                to:
+                  type: string
+                contactName:
+                  type: string
+                contactNumber:
+                  type: string
+                organization:
+                  type: string
+      responses:
+        '200':
+          description: Contact sent
+
   /send:
     post:
       summary: Send Message
@@ -213,6 +281,11 @@ paths:
                   type: string
                 mediaType:
                   type: string
+                  enum: [image, video, audio, document]
+                caption:
+                  type: string
+                fileName:
+                  type: string
       responses:
         '200':
           description: Bulk processing completed
@@ -225,3 +298,12 @@ paths:
                     type: string
                   results:
                     type: array
+                    items:
+                      type: object
+                      properties:
+                        to:
+                          type: string
+                        status:
+                          type: string
+                        error:
+                          type: string

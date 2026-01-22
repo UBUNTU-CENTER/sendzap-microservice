@@ -75,13 +75,15 @@ export async function deleteSession(sessionId) {
     if (session) {
         if (session.sock) {
             try {
+                session.sock.ev.removeAllListeners()
                 await session.sock.logout()
-                session.sock.end()
+                session.sock.end(new Error('Session Deleted'))
             } catch (err) {
                 logger.error(`Error logging out session ${sessionId}:`, err)
             }
         }
         sessions.delete(sessionId)
+        logger.info(`Session ${sessionId}: Deleted and resources pruned.`)
     }
 }
 

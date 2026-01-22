@@ -16,5 +16,7 @@ router.post('/send', messageController.sendMessage)
 router.post('/send-bulk', messageController.sendBulkMessage)
 router.get('/groups/:sessionId', messageController.listGroups)
 router.get('/contacts/:sessionId', messageController.listContacts)
+router.get('/check-number/:sessionId/:number', messageController.checkNumber)
+router.post('/send-contact', messageController.sendContact)
 
 export default router

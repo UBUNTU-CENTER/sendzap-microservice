@@ -1,6 +1,8 @@
+import 'dotenv/config'
 import express from 'express'
 import routes from './routes/index.js'
 import logger from './config/logger.js'
+import { authMiddleware } from './middleware/auth.middleware.js'
 
 const app = express()
 
@@ -11,6 +13,9 @@ app.use((req, res, next) => {
     logger.info(`${req.method} ${req.url}`)
     next()
 })
+
+// Authentication
+app.use(authMiddleware)
 
 // Routes
 app.use('/', routes)

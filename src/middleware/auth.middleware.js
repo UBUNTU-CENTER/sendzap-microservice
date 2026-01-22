@@ -1,0 +1,23 @@
+import logger from '../config/logger.js'
+
+export const authMiddleware = (req, res, next) => {
+    // Skip auth for Swagger UI if needed, but here we cover all routes
+    if (req.path === '/api-docs' || req.path.startsWith('/api-docs/')) {
+        return next()
+    }
+
+    const apiKey = req.headers['x-api-key']
+    const validApiKey = process.env.API_KEY
+
+    if (!validApiKey) {
+        logger.warn('Auth: API_KEY not set in environment. Allowing request (INSECURE).')
+        return next()
+    }
+
+    if (apiKey !== validApiKey) {
+        logger.warn(`Auth: Unauthorized access attempt from ${req.ip}`)
+        return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-API-KEY header' })
+    }
+
+    next()
+}

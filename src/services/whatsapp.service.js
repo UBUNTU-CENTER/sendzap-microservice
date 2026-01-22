@@ -5,7 +5,9 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys'
 import logger from '../config/logger.js'
 
-export async function createConnection(sessionId, { onQR, onStatusChange }) {
+import { triggerWebhook } from './webhook.service.js'
+
+export async function createConnection(sessionId, { onQR, onStatusChange }, retryCount = 0) {
     const { state, saveCreds } = await useMultiFileAuthState(`sessions/${sessionId}`)
     const { version, isLatest } = await fetchLatestBaileysVersion()
 
@@ -15,17 +17,22 @@ export async function createConnection(sessionId, { onQR, onStatusChange }) {
         version,
         auth: state,
         printQRInTerminal: false,
-        logger: logger.child({ session: sessionId, level: 'silent' }) // keep baileys internal logs quiet
+        logger: logger.child({ session: sessionId, level: 'silent' }),
+        // Optimizations for high-density (low RAM)
+        syncFullHistory: false,
+        markOnlineOnConnect: false,
+        shouldIgnoreJid: (jid) => jid?.includes('newsletter'), // Ignore newsletters to save RAM
     })
 
     sock.ev.on('creds.update', saveCreds)
 
+    // Incoming messages and status updates are disabled to save resources
+    // as this microservice is focused on outbound messaging only.
+
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update
 
-        if (qr && onQR) {
-            onQR(qr)
-        }
+        if (qr && onQR) onQR(qr)
 
         if (connection === 'connecting') {
             if (onStatusChange) onStatusChange('connecting')
@@ -34,18 +41,33 @@ export async function createConnection(sessionId, { onQR, onStatusChange }) {
         if (connection === 'open') {
             logger.info(`Session ${sessionId}: Connected`)
             if (onStatusChange) onStatusChange('connected')
+            retryCount = 0
+            triggerWebhook('session.status', { sessionId, status: 'connected' })
         }
 
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.code
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401
 
-            logger.info(`Session ${sessionId}: Connection closed (${statusCode}), reconnecting: ${shouldReconnect}`)
+            logger.warn(`Session ${sessionId}: Connection closed (${statusCode}). Reason: ${lastDisconnect?.error?.message}. Reconnecting: ${shouldReconnect}`)
 
             if (onStatusChange) onStatusChange(shouldReconnect ? 'reconnecting' : 'disconnected')
 
+            triggerWebhook('session.status', {
+                sessionId,
+                status: shouldReconnect ? 'reconnecting' : 'disconnected',
+                reason: lastDisconnect?.error?.message
+            })
+
             if (shouldReconnect) {
-                createConnection(sessionId, { onQR, onStatusChange })
+                const delay = Math.min(Math.pow(2, retryCount) * 1000, 30000)
+                logger.info(`Session ${sessionId}: Reconnecting in ${delay}ms... (Attempt ${retryCount + 1})`)
+
+                setTimeout(() => {
+                    createConnection(sessionId, { onQR, onStatusChange }, retryCount + 1)
+                }, delay)
+            } else if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+                logger.error(`Session ${sessionId}: Logged out or unauthorized.`)
             }
         }
     })

@@ -1,0 +1,8 @@
+{
+    "ignore": [
+        "sessions/*",
+        "node_modules/*"
+    ],
+    "ext": "js,json,yaml",
+    "delay": "2500"
+}
