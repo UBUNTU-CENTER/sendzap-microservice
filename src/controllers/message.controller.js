@@ -153,7 +153,7 @@ export const listContacts = async (req, res) => {
 
 export const checkNumber = async (req, res) => {
     try {
-        const { sessionId, number } = req.params
+        const { sessionId, number } = req.body
         const session = sessionManager.getSession(sessionId)
 
         if (!session || session.status !== 'connected') {
@@ -207,6 +207,27 @@ export const sendContact = async (req, res) => {
         res.json({ status: 'sent', messageId: sentMsg.key.id })
     } catch (error) {
         logger.error(`Controller Error (sendContact):`, error)
+        res.status(500).json({ error: error.message })
+    }
+}
+
+export const setTyping = async (req, res) => {
+    try {
+        const { sessionId, to, state } = req.body
+        const session = sessionManager.getSession(sessionId)
+
+        if (!session || session.status !== 'connected') {
+            return res.status(400).json({ error: 'Session not found or not connected' })
+        }
+
+        const jid = to.includes('@') ? to : (to.includes('-') ? `${to}@g.us` : `${to}@s.whatsapp.net`)
+
+        // state: 'composing' | 'recording' | 'paused'
+        await session.sock.sendPresenceUpdate(state || 'composing', jid)
+
+        res.json({ status: 'success' })
+    } catch (error) {
+        logger.error(`Controller Error (setTyping):`, error)
         res.status(500).json({ error: error.message })
     }
 }

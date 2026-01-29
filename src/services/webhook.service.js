@@ -20,7 +20,7 @@ export const triggerWebhook = async (event, data) => {
         // Simple fire and forget with error logging
         // For production, a queue system (like BullMQ) would be better
         axios.post(WEBHOOK_URL, payload, {
-            timeout: 5000,
+            timeout: 60000,
             headers: {
                 'Content-Type': 'application/json',
                 'User-Agent': 'WhatsApp-Noweb-Microservice'

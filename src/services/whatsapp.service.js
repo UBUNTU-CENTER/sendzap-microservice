@@ -30,8 +30,29 @@ export async function createConnection(sessionId, { onQR, onStatusChange, onSock
 
     sock.ev.on('creds.update', saveCreds)
 
-    // Incoming messages and status updates are disabled to save resources
-    // as this microservice is focused on outbound messaging only.
+    // Listen for incoming messages
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        if (type === 'notify') {
+            for (const msg of messages) {
+                if (!msg.key.fromMe) {
+                    // Extract minimal data needed for the webhook
+                    const data = {
+                        sessionId,
+                        message: msg,
+                        // Helper to get text content easily
+                        content: msg.message?.conversation ||
+                            msg.message?.extendedTextMessage?.text ||
+                            msg.message?.imageMessage?.caption ||
+                            msg.message?.videoMessage?.caption ||
+                            ''
+                    }
+
+                    logger.info(`Session ${sessionId}: Received message from ${msg.key.remoteJid}`)
+                    triggerWebhook('message.upsert', data)
+                }
+            }
+        }
+    })
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update

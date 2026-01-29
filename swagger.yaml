@@ -150,20 +150,23 @@ paths:
         '200':
           description: List of contacts
 
-  /check-number/{sessionId}/{number}:
-    get:
+  /check-number:
+    post:
       summary: Check if number exists on WhatsApp
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: number
-          in: path
-          required: true
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - number
+              properties:
+                sessionId:
+                  type: string
+                number:
+                  type: string
       responses:
         '200':
           description: OK
