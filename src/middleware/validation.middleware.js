@@ -13,7 +13,7 @@ const validate = (schema, property = 'body') => {
 }
 
 // Common schemas
-const sessionIdSchema = Joi.string().alphanum().min(3).max(50).required()
+const sessionIdSchema = Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(3).max(50).required()
 const phoneSchema = Joi.string().min(5).max(20).required()
 
 // Endpoint schemas

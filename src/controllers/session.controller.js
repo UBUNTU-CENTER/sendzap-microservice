@@ -56,16 +56,15 @@ export const getQRImage = async (req, res) => {
     }
 
     try {
-        const qrDataURL = await QRCode.toDataURL(session.qr)
-        const jsonData = {
-            id: sessionId,
-            status: session.status,
-            qr: qrDataURL
-        }
-        res.send(`
-            <img src="${qrDataURL}" />
-            <pre>${JSON.stringify(jsonData, null, 2)}</pre>
-        `)
+        // Generate QR code as a buffer
+        const qrBuffer = await QRCode.toBuffer(session.qr, {
+            type: 'png',
+            width: 300,
+            margin: 2
+        })
+
+        res.setHeader('Content-Type', 'image/png')
+        res.send(qrBuffer)
     } catch (error) {
         logger.error('Error generating QR image:', error)
         res.status(500).send('Error generating QR image')

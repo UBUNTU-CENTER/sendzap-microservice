@@ -6,7 +6,7 @@ export const authMiddleware = (req, res, next) => {
         return next()
     }
 
-    const apiKey = req.headers['x-api-key']
+    const apiKey = req.headers['x-api-key'] || req.query.api_key
     const validApiKey = process.env.API_KEY
 
     if (!validApiKey) {
@@ -15,8 +15,8 @@ export const authMiddleware = (req, res, next) => {
     }
 
     if (apiKey !== validApiKey) {
-        logger.warn(`Auth: Unauthorized access attempt from ${req.ip}`)
-        return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-API-KEY header' })
+        logger.warn(`Auth: Unauthorized access attempt from ${req.ip} (using ${apiKey ? 'invalid key' : 'no key'})`)
+        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API KEY' })
     }
 
     next()
