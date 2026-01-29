@@ -1,7 +1,13 @@
 openapi: 3.0.0
 info:
   title: WhatsApp Noweb API
-  description: A robust, modular WhatsApp API using @whiskeysockets/baileys. Optimized for high-density microservice deployment.
+  description: |
+    A robust, modular WhatsApp API using @whiskeysockets/baileys. Optimized for high-density microservice deployment.
+    
+    ### Rate Limiting
+    - **Global**: 100 requests per 15 minutes per IP.
+    - **Messaging**: 30 requests per minute per IP for `/send`, `/send-bulk`, and `/send-contact`.
+    - **Number Check**: 60 requests per minute per IP for `/check-number`.
   version: 1.0.0
 servers:
   - url: http://localhost:3000

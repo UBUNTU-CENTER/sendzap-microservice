@@ -4,9 +4,12 @@ import routes from './routes/index.js'
 import logger from './config/logger.js'
 import { authMiddleware } from './middleware/auth.middleware.js'
 
+import { globalLimiter } from './middleware/rate-limit.middleware.js'
+
 const app = express()
 
 app.use(express.json())
+app.use(globalLimiter)
 
 // Log requests
 app.use((req, res, next) => {
