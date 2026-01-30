@@ -43,7 +43,7 @@ export const validateSendBulk = validate(Joi.object({
 }))
 
 export const validateCheckNumber = validate(Joi.object({
-    sessionId: sessionIdSchema,
+    sessionId: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(3).max(50).optional(),
     number: phoneSchema
 }))
 

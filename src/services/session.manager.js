@@ -72,6 +72,10 @@ export function getAllSessions() {
     }))
 }
 
+export function getFirstConnectedSession() {
+    return Array.from(sessions.values()).find(s => s.status === 'connected')
+}
+
 export async function deleteSession(sessionId) {
     const session = sessions.get(sessionId)
     if (session) {

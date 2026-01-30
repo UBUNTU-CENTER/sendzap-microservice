@@ -154,10 +154,16 @@ export const listContacts = async (req, res) => {
 export const checkNumber = async (req, res) => {
     try {
         const { sessionId, number } = req.body
-        const session = sessionManager.getSession(sessionId)
+
+        let session
+        if (sessionId) {
+            session = sessionManager.getSession(sessionId)
+        } else {
+            session = sessionManager.getFirstConnectedSession()
+        }
 
         if (!session || session.status !== 'connected') {
-            return res.status(400).json({ error: 'Session not found or not connected' })
+            return res.status(400).json({ error: 'No connected session available' })
         }
 
         const jid = number.includes('@') ? number : `${number}@s.whatsapp.net`
@@ -167,10 +173,28 @@ export const checkNumber = async (req, res) => {
             return res.json({ number, exists: false })
         }
 
+        let profilePictureUrl = null
+        let status = null
+
+        try {
+            profilePictureUrl = await session.sock.profilePictureUrl(result.jid, 'image')
+        } catch (e) {
+            logger.debug(`Could not fetch profile picture for ${result.jid}: ${e.message}`)
+        }
+
+        try {
+            const statusResult = await session.sock.fetchStatus(result.jid)
+            status = statusResult?.status
+        } catch (e) {
+            logger.debug(`Could not fetch status for ${result.jid}: ${e.message}`)
+        }
+
         res.json({
             number,
             exists: true,
-            jid: result.jid
+            jid: result.jid,
+            profilePictureUrl,
+            status
         })
     } catch (error) {
         logger.error(`Controller Error (checkNumber):`, error)
